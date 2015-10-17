@@ -1,6 +1,15 @@
-var GLBound = function(gl)
-{
-  this._gl = gl;
-};
+/**
+ * Base class for all things bound to a gl context.
+ */
+class GLBound {
 
-imv.GLBound = GLBound;
+  /**
+   * Binds to a gl context
+   * @param  {context} gl  A webgl context
+   */
+  constructor(gl) {
+    this._gl = gl;
+  }
+}
+
+export default GLBound;

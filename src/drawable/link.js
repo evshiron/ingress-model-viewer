@@ -1,57 +1,50 @@
-var LinkDrawable = (function(){
+import TexturedDrawable from './textured';
+import { vec3, mat3, quat } from 'gl-matrix';
 
-  var linkDrawable = function(programName, mesh, textureName) {
-    DynamicTexturedDrawable.call(this, programName, mesh, textureName);
+/**
+ * The LinkDrawable represents the base class for link-type drawables.
+ */
+class LinkDrawable extends TexturedDrawable {
+
+  /**
+   * Constructs a link drawable witth the given program and texture.
+   * @param  {String} programName Internal name of the program to use
+   * @param  {String} textureName Internal name of the texture to use
+   */
+  constructor(programName, textureName) {
+    super(programName, null, textureName);
     this.uniforms.u_cameraFwd = vec3.fromValues(0, 0, -1);
     this.uniforms.u_elapsedTime = 0;
-  };
-  inherits(linkDrawable, DynamicTexturedDrawable);
+  }
 
-  // TODO: needs a camera class:
-  linkDrawable.prototype.updateView = function(viewProject, view, project) {
-    DynamicTexturedDrawable.prototype.updateView.call(this, viewProject, view, project);
-    if(view) {
-      var rot = mat3.fromMat4(mat3.create(), view);
+  /**
+   * Updates the camera transforms for the link drawables
+   * @param  {mat4} viewProject Combined view and project matrix
+   * @param  {mat4} view        View Matrix
+   * @param  {mat4} project     Projection matrix
+   * @return {void}
+   */
+  updateView(viewProject, camera) {
+    super.updateView(viewProject, camera);
+    if(camera) {
+      var rot = mat3.fromMat4(mat3.create(), camera.view);
       var q = quat.fromMat3(quat.create(), rot);
       var fwd = vec3.transformQuat(vec3.create(), vec3.fromValues(0, 0, -1), q);
       vec3.normalize(fwd, fwd);
       this.uniforms.u_cameraFwd = fwd;
     }
-  };
+  }
 
-  linkDrawable.prototype.updateTime = function(delta) {
-    var ret = DynamicTexturedDrawable.prototype.updateTime.call(this, delta);
+  /**
+   * Updates default periodic uniforms for links
+   * @param  {Number} delta Time delta since last draw
+   * @return {Boolean}      @see src/drawable.js#updateTime
+   */
+  updateTime(delta) {
+    var ret = super.updateTime(delta);
     this.uniforms.u_elapsedTime = ((this.elapsed / 1000) % 300.0) * 0.1;
     return ret;
-  };
+  }
+}
 
-  linkDrawable.prototype.addLink = function() {
-    if(!this.mesh) {
-      throw 'Mesh not ready yet!';
-    }
-
-    this.mesh.addLink.apply(this.mesh, arguments);
-  };
-
-  return linkDrawable;
-}());
-
-var PortalLinkDrawable = function(mesh, textureName) {
-  LinkDrawable.call(this, 'LinkShader', mesh, textureName);
-};
-inherits(PortalLinkDrawable, LinkDrawable);
-
-var SphericalLinkDrawable = function(mesh, textureName) {
-  LinkDrawable.call(this, 'link3d', mesh, textureName);
-};
-inherits(SphericalLinkDrawable, LinkDrawable);
-
-SphericalLinkDrawable.prototype.updateView = function(viewProject, view, project) {
-  LinkDrawable.prototype.updateView.call(this, viewProject, view, project);
-  this.uniforms.u_model = this.model;
-};
-
-imv.Drawables = imv.Drawables || {};
-imv.Drawables.Link = LinkDrawable;
-imv.Drawables.PortalLink = PortalLinkDrawable;
-imv.Drawables.SphericalLink = SphericalLinkDrawable;
+export default LinkDrawable;

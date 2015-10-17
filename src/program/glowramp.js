@@ -1,12 +1,31 @@
-var GlowrampProgram = (function(){
+import Program from '../program';
+import { resetGL } from '../utils';
 
-  var glowramp = function(gl, vertex, fragment) {
-    Program.call(this, gl, vertex, fragment);
-  };
-  inherits(glowramp, Program);
+/**
+ * A GlowrampProgram is a program meant for drawing
+ * transparent glowramp drawables
+ *
+ * @extends {Program}
+ */
+class GlowrampProgram extends Program {
 
-  glowramp.prototype.use = function(fn)
-  {
+  /**
+   * Constructs a Glowramp program given vertex and fragment shader sources
+   * @param  {context} gl      WebGL context
+   * @param  {String} vertex   Vertex shader source
+   * @param  {String} fragment Fragment shader source
+   */
+  constructor(gl, vertex, fragment) {
+    super(gl, vertex, fragment);
+  }
+
+  /**
+   * Use this program to draw
+   *
+   * Sets up the proper blending modes, etc
+   * @param  {Function} fn The draw function
+   */
+  use(fn) {
     if(!this.program)
     {
       this.init();
@@ -25,10 +44,7 @@ var GlowrampProgram = (function(){
 
     resetGL(gl);
     //gl.useProgram(0);
-  };
+  }
+}
 
-  return glowramp;
-}());
-
-imv.Programs = imv.Programs || {};
-imv.Programs.Glowramp = GlowrampProgram;
+export default GlowrampProgram;

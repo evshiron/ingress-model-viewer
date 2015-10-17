@@ -1,24 +1,42 @@
-var BicoloredDrawable = (function(){
+import Constants from '../constants';
+import TexturedDrawable from './textured';
+import { vec4 } from 'gl-matrix';
 
-  // TODO: make constants for these,
-  // similar to how mesh names are now handled.
-  var PROGRAM = imv.Constants.Program.Bicolored;
+const PROGRAM = Constants.Program.Bicolored;
 
-  // default quality color: very rare
-  var defaultColor0 = vec4.clone(constants.qualityColors.VERY_RARE);
+/**
+ * Default quality color.
+ * @type {vec4}
+ */
+const defaultColor0 = vec4.clone(Constants.qualityColors.VERY_RARE);
 
-  // default glow color: xm color
-  var defaultColor1 = vec4.clone(constants.xmColors.coreGlow);
+/**
+ * Default glow color
+ * @type {vec4}
+ */
+const defaultColor1 = vec4.clone(Constants.xmColors.coreGlow);
 
-  var bicolorDrawable = function(meshName, textureName) {
-    TexturedDrawable.call(this, PROGRAM, meshName, textureName);
+/**
+ * This is used for items and other renderables that have two visible colors
+ *
+ * The specifics of it are basically: if the texture has an opacity less than 0.5,
+ * the texture color is blended with u_color0
+ * Otherwise, it's the texture color blended with u_color1
+ *
+ * Or something like that.
+ */
+class BicoloredDrawable extends TexturedDrawable {
+
+  /**
+   * Initialized a bi-colored drawable
+   * @param  {String} meshName    Internal name of the mesh for this drawable
+   * @param  {String} textureName Internal name of the texture for this drawble
+   */
+  constructor(meshName, textureName) {
+    super(PROGRAM, meshName, textureName);
     this.uniforms.u_color0 = vec4.clone(defaultColor0);
     this.uniforms.u_color1 = vec4.clone(defaultColor1);
-  };
-  inherits(bicolorDrawable, TexturedDrawable);
+  }
+}
 
-  return bicolorDrawable;
-}());
-
-imv.Drawables = imv.Drawables || {};
-imv.Drawables.Bicolored = BicoloredDrawable;
+export default BicoloredDrawable;

@@ -1,36 +1,27 @@
-var ParticleDrawable = (function(){
+import Constants from '../constants';
+import TexturedDrawable from './textured';
+import { vec3 } from 'gl-matrix';
 
-  var particleDrawable = function(texture) {
-    TexturedDrawable.call(this, texture);
-    this.uniforms.u_cameraPos = {
-      type: "v3",
-      value: new THREE.Vector3()
-    };
-    this.options.transparent = true;
-  };
-  inherits(particleDrawable, TexturedDrawable);
+const TEXTURE = Constants.Texture.Particle;
 
-  particleDrawable.prototype.updateView = function(camera) {
-    this.projectView.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-    this.updateUniformV('u_cameraPos', camera.position);
-    this.updateUniformM('u_modelViewProject', this.projectView);
-    /*var camVec = this.mesh.position.clone().sub(camera.position);
-    camVec.y = 0;
-    camVec.normalize();
-    var angle = Math.atan2(camVec.z, camVec.x);
-    var quat = new THREE.Quaternion();
-    quat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), angle);
-    this.mesh.quaternion.copy(quat);
-    this.updateModel();*/
-    //ModelDrawable.prototype.updateView.call(this, camera);
-  };
+/**
+ * A ParticleDrawable represents the base class for particles
+ *
+ * @extends {TexturedDrawable}
+ */
+class ParticleDrawable extends TexturedDrawable {
 
-  /*particleDrawable.prototype.updateModel = function() {
-    // do nothing, since we don't want to use the model's internal matrix
-  };*/
+  constructor(programName) {
+    super(programName, null, TEXTURE);
+    this.uniforms.u_cameraPos = vec3.fromValues(0, 0, 0);
+  }
 
-  return particleDrawable;
-}());
+  updateView(viewProject, camera) {
+    super.updateView(viewProject, camera);
+    if(camera) {
+      vec3.copy(this.uniforms.u_cameraPos, camera.position);
+    }
+  }
+}
 
-imv.Drawables = imv.Drawables || {};
-imv.Drawables.Particle = ParticleDrawable;
+export default ParticleDrawable;

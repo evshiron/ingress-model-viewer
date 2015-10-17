@@ -1,12 +1,31 @@
-var OpaqueProgram = (function(){
+import Program from '../program';
+import { resetGL } from '../utils';
 
-  var opaque = function(gl, vertex, fragment) {
-    Program.call(this, gl, vertex, fragment);
-  };
-  inherits(opaque, Program);
+/**
+ * And OpaqueProgram is a Program used to draw opaque drawables
+ *
+ * @extends {Program}
+ */
+class OpaqueProgram extends Program {
 
-  opaque.prototype.use = function(fn)
-  {
+  /**
+   * Construct an opaque program given vertex and fragment shader
+   * sources.
+   * @param  {context} gl      WebGL context
+   * @param  {String} vertex   Vertex shader source
+   * @param  {String} fragment Fragment shader source
+   */
+  constructor(gl, vertex, fragment) {
+    super(gl, vertex, fragment);
+  }
+
+  /**
+   * Use this program to draw.
+   *
+   * Sets up the proper culling for drawing opaque objects
+   * @param  {Function} fn The draw function
+   */
+  use(fn) {
     if(!this.program)
     {
       this.init();
@@ -24,10 +43,7 @@ var OpaqueProgram = (function(){
 
     resetGL(gl);
     //gl.useProgram(0);
-  };
+  }
+}
 
-  return opaque;
-}());
-
-imv.Programs = imv.Programs || {};
-imv.Programs.Opaque = OpaqueProgram;
+export default OpaqueProgram;

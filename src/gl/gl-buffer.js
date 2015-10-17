@@ -1,76 +1,143 @@
-var GLBuffer = function(gl, target, usage) {
-  GLBound.call(this, gl);
-  this.target = target || gl.ARRAY_BUFFER; // probably shouldn't default this.
-  this.usage = usage || gl.STATIC_DRAW;
-  this.glBuf = null;
-  this.values = null;
-  return this;
-};
-inherits(GLBuffer, GLBound);
+import GLBound from '../gl-bound';
 
-GLBuffer.prototype.bindBuffer = function() {
-  if(!this.values) {
-    console.warn('trying to update a buffer with no values.');
-    return false;
+/**
+ * A GLBuffer is a buffer of some sort that will be passed to the gpu
+ *
+ * @extends {GLBound}
+ */
+class GLBuffer extends GLBound {
+
+  /**
+   * Construct a gl-bound buffer
+   *
+   * @chainable
+   * @param  {context} gl    WebGL context
+   * @param  {enum} target   gl target  @see https://www.khronos.org/registry/webgl/specs/1.0/#5.14.5
+   * @param  {enum} usage    gl usage @see https://www.khronos.org/registry/webgl/specs/1.0/#5.14.5
+   * @return {this}          the GLBuffer
+   */
+  constructor(gl, target, usage) {
+    super(gl);
+    this.target = target || gl.ARRAY_BUFFER; // probably shouldn't default this.
+    this.usage = usage || gl.STATIC_DRAW;
+    this.glBuf = null;
+    this.values = null;
+    return this;
   }
-  if(!this.glBuf) {
-    this.glBuf = this._gl.createBuffer();
+
+  /**
+   * Binds the buffer to the gpu
+   *
+   * @chainable
+   * @return {this}
+   */
+  bindBuffer() {
+    if(!this.values) {
+      console.warn('trying to update a buffer with no values.');
+      return false;
+    }
+    if(!this.glBuf) {
+      this.glBuf = this._gl.createBuffer();
+    }
+    this._gl.bindBuffer(this.target, this.glBuf);
+    return this;
   }
-  this._gl.bindBuffer(this.target, this.glBuf);
-  return this;
-};
 
-GLBuffer.prototype.unbindBuffer = function() {
-  // this._gl.bindBuffer(this.target, 0);  // apparently this makes webgl cranky
-  return this;
-};
+  /**
+   * Unbinds the buffer (NPI)
+   *
+   * @chainable
+   * @return {this}
+   */
+  unbindBuffer() {
+    // this._gl.bindBuffer(this.target, 0);  // apparently this makes webgl cranky
+    return this;
+  }
 
-GLBuffer.prototype.update = function() {
-  this.bindBuffer();
-  // if I do it this way, does it break?
-  // if it works, will updating the underlying buffer
-  // update the buffer without needing to call gl.bufferData again??
-  this._gl.bufferData(this.target, this.values, this.usage);
-  return this; // .unbindBuffer(); // apparently this makes webgl angry.
-};
+  /**
+   * Update the buffer data on the gpu
+   *
+   * @chainable
+   * @return {this}
+   */
+  update() {
+    this.bindBuffer();
+    // if I do it this way, does it break?
+    // if it works, will updating the underlying buffer
+    // update the buffer without needing to call gl.bufferData again??
+    this._gl.bufferData(this.target, this.values, this.usage);
+    return this; // .unbindBuffer(); // apparently this makes webgl angry.
+  }
 
-GLBuffer.prototype.setValues = function(values, offset) {
-  if(!this.values) {
+  /**
+   * Sets the buffer contents
+   *
+   * @chainable
+   * @param {ArrayBuffer} values Values to store in the buffer
+   * @param {Number} offset      Offset to write the values
+   * @return {this}
+   */
+  setValues(values, offset) {
+    if(!this.values) {
+      this.values = values;
+    } else {
+      this.values.set(values, offset);
+    }
+    this.update();
+    return this;
+  }
+
+  /**
+   * Deletes a chunk of a buffer
+   *
+   * @chainable
+   * @param  {Number} start Start of deletion
+   * @param  {Number} end   End of deletion
+   * @return {this}
+   */
+  deleteWithin(start, end) {
+    if(!this.values) {
+      console.warn('Trying to splice a buffer that has no values.');
+      return false;
+    }
+    var nValues = end - start;
+    var empty = new this.values.constructor(nValues);
+    this.values.set(this.values.subarray(end), start);
+    this.values.set(empty, this.values.length - nValues);
+    this.update();
+    return this;
+  }
+
+  /**
+   * Do something with each elemnt of the buffer
+   *
+   * @chainable
+   * @param  {Function} callback The callback (values returned will overwrite
+   *                             the contents of the buffer at that offset)
+   * @param  {Number}   start    Offset to start
+   * @param  {Number}   end      Offset to end
+   * @return {this}
+   */
+  map(callback, start, end) {
+    start = start === undefined ? 0 : start;
+    end = end === undefined ? this.values.length : end;
+    for(var i = start; i < end; i++) {
+      this.values[i] = callback(this.values[i], i);
+    }
+    return this;
+  }
+
+  /**
+   * Update a buffer's values, and also update the buffer on the gpu
+   *
+   * @chainable
+   * @param  {ArrayBuffer} values New values to fill the buffer with
+   * @return {this}
+   */
+  updateBuffer(values) {
     this.values = values;
-  } else {
-    this.values.set(values, offset);
+    return this.update();
   }
-  this.update();
-  return this;
-};
+}
 
-// remove a chunk of a buffer
-GLBuffer.prototype.deleteWithin = function(start, end) {
-  if(!this.values) {
-    console.warn('Trying to splice a buffer that has no values.');
-    return false;
-  }
-  var nValues = end - start;
-  var empty = new this.values.constructor(nValues);
-  this.values.set(this.values.subarray(end), start);
-  this.values.set(empty, this.values.length - nValues);
-  this.update();
-  return this;
-};
-
-// do something to each element in a buffer
-GLBuffer.prototype.map = function(callback, start, end) {
-  start = start === undefined ? 0 : start;
-  end = end === undefined ? this.values.length : end;
-  for(var i = start; i < end; i++) {
-    this.values[i] = callback(this.values[i], i);
-  }
-};
-
-GLBuffer.prototype.updateBuffer = function(values) {
-  this.values = values;
-  return this.update();
-};
-
-imv.GL = imv.GL || {};
-imv.GL.Buffer = GLBuffer;
+export default GLBuffer;

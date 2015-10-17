@@ -1,31 +1,53 @@
-var Mesh = (function() {
-  var MODE_TRIANGLES = 'triangles',
-      MODE_LINES = 'lines';
+import GLBound from './gl-bound';
 
-  var Mesh = function(gl, attributes, faces, lines) {
-    GLBound.call(this, gl);
+const MODE_TRIANGLES = 'triangles';
+const MODE_LINES = 'lines';
+
+/**
+ * Base class for all meshes
+ *
+ * @extends {GLBound}
+ */
+class Mesh extends GLBound {
+
+  /**
+   * Initializes a mesh
+   * @param  {context} gl              A webgl context
+   * @param  {Float32Array} attributes A typed array of vertex attributes
+   * @param  {Uint16Array} faces       A typed array of face indices
+   * @param  {Uint16Array} lines       A typed array of line indices
+   */
+  constructor(gl, attributes, faces, lines) {
+    super(gl);
     this.attributes = attributes;
     this.faces = faces;
     this.lines = lines;
     this.mode = MODE_TRIANGLES;
     this.bounds = null;
     this.center = null;
-  };
-  inherits(Mesh, GLBound);
+  }
 
-  Mesh.MODE_LINES = MODE_LINES;
-  Mesh.MODE_TRIANGLES = MODE_TRIANGLES;
-
-  Mesh.prototype.draw = function(locations) {
+  /**
+   * Given a set of locations from the currently-active shader, draw this mesh
+   * @param  {Object} locations A hash of locations by name
+   */
+  draw(locations) {
     this.attributes.draw(locations);
     if(this.mode === MODE_TRIANGLES) {
       this.faces.draw();
     } else if (this.mode === MODE_LINES) {
       this.lines.draw();
     }
-  };
+  }
 
-  Mesh.prototype.boundingBox = function(coordAttribute) {
+  /**
+   * Calculate the bounding box of the mesh
+   * @param  {Number} coordAttribute Index of the attribute representing vertex position
+   * @return {Object}                An object consisting of two arrays of the same length
+   *                                 as the coordinate attribute, representing min and max
+   *                                 coordinates.
+   */
+  boundingBox(coordAttribute) {
     if(!this.bounds) {
       coordAttribute = coordAttribute === undefined ? 0 : coordAttribute;
       var bounds = {
@@ -54,9 +76,10 @@ var Mesh = (function() {
       this.bounds = bounds;
     }
     return this.bounds;
-  };
+  }
 
-  Mesh.prototype.centerOfMass = function(coordAttribute) {
+  // TODO: fixme
+  centerOfMass(coordAttribute) {
     if(!this.center) {
       coordAttribute = coordAttribute === undefined ? 0 : coordAttribute;
       var sum = null,
@@ -80,18 +103,25 @@ var Mesh = (function() {
       this.center = sum;
     }
     return this.center;
-  };
+  }
 
-  Mesh.prototype.boundingBoxCenter = function(coordAttribute) {
+  /**
+   * Calculate the center of the bounding box.
+   * @param  {Number} coordAttribute Index of the attribute represention vertex position.
+   * @return {mixed}                 A vector of the same size as the position attribute,
+   *                                 representing the center of the bounding box.
+   */
+  boundingBoxCenter(coordAttribute) {
     if(!this.bounds) {
       this.boundingBox(coordAttribute);
     }
     return this.bounds.max.map(function(e, i) {
       return (e - this.bounds.min[i]) / 2;
     }.bind(this));
-  };
+  }
+}
 
-  return Mesh;
-}());
+Mesh.MODE_LINES = MODE_LINES;
+Mesh.MODE_TRIANGLES = MODE_TRIANGLES;
 
-imv.Mesh = Mesh;
+export default Mesh;

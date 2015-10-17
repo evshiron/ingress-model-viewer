@@ -1,63 +1,72 @@
-(function() {
-  var meshes = imv.Constants.Mesh.World;
-  var textures = imv.Constants.Texture;
+import Constants from '../constants';
+import GlowrampDrawable from './glowramp';
+import BicoloredDrawable from './bicolored';
+import ShieldEffectDrawable from './shield-effect';
+import OrnamentDrawable from './ornament';
 
-  imv.Drawables = imv.Drawables || {};
-  imv.Drawables.World = imv.Drawables.World || {};
+/**
+ * Various world drawables
+ *
+ * Includes Portal, ShieldEffect, waypoints, resonators, and artifact glows
+ * @type {Object}
+ */
+var World = {};
+var meshes = Constants.Mesh.World;
+var textures = Constants.Texture;
 
-  var portal = function() {
-    GlowrampDrawable.call(this, meshes.Portal, textures.Glowramp);
-  };
-  inherits(portal, GlowrampDrawable);
+function makeGlowramp(mesh, texture) {
+  class glowrampbase extends GlowrampDrawable {
+    constructor() {
+      super(mesh, texture);
+    }
+  }
 
-  imv.Drawables.World.Portal = portal;
+  return glowrampbase;
+}
 
-  var shieldEffect = function() {
-    ShieldEffectDrawable.call(this, meshes.Shield, textures.ShieldEffect);
-  };
-  inherits(shieldEffect, ShieldEffectDrawable);
+function makeBicolored(mesh, texture) {
+  class bicoloredbase extends BicoloredDrawable {
+    constructor() {
+      super(mesh, texture);
+    }
+  }
 
-  imv.Drawables.World.Shield = shieldEffect;
+  return bicoloredbase;
+}
 
-  var waypoint = function() {
-    GlowrampDrawable.call(this, meshes.Waypoint, textures.Waypoint);
-  };
-  inherits(waypoint, GlowrampDrawable);
+function makeShieldEffect(mesh, texture) {
+  class shieldeffectbase extends ShieldEffectDrawable {
+    constructor() {
+      super(mesh, texture);
+    }
+  }
 
-  imv.Drawables.World.Waypoint = waypoint;
+  return shieldeffectbase;
+}
 
-  var resonator = function() {
-    BicoloredDrawable.call(this, meshes.Resonator, textures.FlipCard);
-  };
-  inherits(resonator, BicoloredDrawable);
+function makeOrnament(mesh, texture) {
+  class ornamentbase extends OrnamentDrawable {
+    constructor() {
+      super(mesh, texture);
+    }
+  }
 
-  imv.Drawables.World.Resonator = resonator;
+  return ornamentbase;
+}
 
-  var artifactsRedGlow = function() {
-    GlowrampDrawable.call(this, meshes.ArtifactsRedGlow, textures.ColorGlow);
-  };
-  inherits(artifactsRedGlow, GlowrampDrawable);
+World.Portal = makeGlowramp(meshes.Portal, textures.Glowramp);
+World.Waypoint = makeGlowramp(meshes.Waypoint, textures.Waypoint);
+World.ArtifactsRedGlow = makeGlowramp(meshes.ArtifactsRedGlow, textures.ColorGlow);
+World.ArtifactsGreenGlow = makeGlowramp(meshes.ArtifactsGreenGlow, textures.ColorGlow);
+World.ArtifactsPurpleGlow = makeGlowramp(meshes.ArtifactsPurpleGlow, textures.ColorGlow);
+World.ArtifactsTargetGlow = makeGlowramp(meshes.ArtifactsTargetGlow, textures.TargetGlow);
 
-  imv.Drawables.World.ArtifactsRedGlow = artifactsRedGlow;
+World.Shield = makeShieldEffect(meshes.Shield, textures.ShieldEffect);
+World.Resonator = makeBicolored(meshes.Resonator, textures.FlipCard);
 
-  var artifactsGreenGlow = function() {
-    GlowrampDrawable.call(this, meshes.ArtifactsGreenGlow, textures.ColorGlow);
-  };
-  inherits(artifactsGreenGlow, GlowrampDrawable);
+World.OrnamentMeetupPoint = makeOrnament(meshes.OrnamentMeetupPoint, textures.OrnamentMeetupPoint);
+World.OrnamentFinishPoint = makeOrnament(meshes.OrnamentFinishPoint, textures.OrnamentFinishPoint);
+World.OrnamentCluster = makeOrnament(meshes.OrnamentCluster, textures.OrnamentCluster);
+World.OrnamentVolatile = makeOrnament(meshes.OrnamentVolatile, textures.OrnamentVolatile);
 
-  imv.Drawables.World.ArtifactsGreenGlow = artifactsGreenGlow;
-
-  var artifactsPurpleGlow = function() {
-    GlowrampDrawable.call(this, meshes.ArtifactsPurpleGlow, textures.ColorGlow);
-  };
-  inherits(artifactsPurpleGlow, GlowrampDrawable);
-
-  imv.Drawables.World.ArtifactsPurpleGlow = artifactsPurpleGlow;
-
-  var artifactsTargetGlow = function() {
-    GlowrampDrawable.call(this, meshes.ArtifactsTargetGlow, textures.TargetGlow);
-  };
-  inherits(artifactsTargetGlow, GlowrampDrawable);
-
-  imv.Drawables.World.ArtifactsTargetGlow = artifactsTargetGlow;
-}());
+export default World;

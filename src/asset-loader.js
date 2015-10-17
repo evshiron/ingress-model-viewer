@@ -1,5 +1,17 @@
-var loadResource = function(url, type, callback)
-{
+import libtga from 'libtga';
+
+/**
+ * Loads a resource via xhr or Image
+ * @param  {String}   url      href of the resource to fetch
+ * @param  {String}   type     One of XHMLHttpRequest's supported responseType
+ *                             values (arraybuffer, blob, document, json, text)
+ *                             or 'image' or 'image.co' (for a cross-origin image)
+ * @param  {Function} callback Callback to execute on success or failure.  Takes
+ *                             err, value as parameters.  Value will be null if err
+ *                             is not null
+ * @return {void}
+ */
+export function loadResource(url, type, callback) {
   if(type === 'image' || type === 'image.co')
   {
     if(/\.tga$/.test(url))
@@ -60,42 +72,65 @@ var loadResource = function(url, type, callback)
 
     xhr.send();
   }
-};
+}
 
-var AssetLoader = function()
-{
-  var _callbacks = {};
-  var _assets = {};
 
-  this.loadAsset = function(url, type, callback)
-  {
+/**
+ * An AssetLoader manages loading one or more assets.  It handles debouncing of
+ * of multiple requests for the same asset, etc.
+ */
+class AssetLoader {
+
+  /**
+   * Noop.
+   */
+  constructor() {
+    this._callbacks = {};
+    this._assets = {};
+  }
+
+  /**
+   * Loads a single asset.
+   *
+   * If the asset is already loaded, the callback is immediately invoked.
+   * @see loadResource
+   */
+  loadAsset(url, type, callback) {
     var name = '_' + encodeURIComponent(url);
-    if(_assets[name])
+    if(this._assets[name])
     {
-      callback(null, _assets[name]);
+      // TODO: bounce this out of the current execution
+      callback(null, this._assets[name]);
       return;
     }
-    _callbacks[name] = _callbacks[name] || [];
-    _callbacks[name].push(callback);
-    if(!_assets.hasOwnProperty(name))
+    this._callbacks[name] = this._callbacks[name] || [];
+    this._callbacks[name].push(callback);
+    if(!this._assets.hasOwnProperty(name))
     {
-      _assets[name] = false;
-      loadResource(url, type, function(err, value) {
+      this._assets[name] = false;
+      loadResource(url, type, (err, value) => {
         if(!err)
         {
-          _assets[name] = value;
+          this._assets[name] = value;
         }
         var cb;
-        while((cb = _callbacks[name].shift()))
+        while((cb = this._callbacks[name].shift()))
         {
           cb(err, value);
         }
       });
     }
-  };
+  }
 
-  this.loadAssetGroup = function(urls, types, callback)
-  {
+  /**
+   * Load a set of assets in parallel
+   * @param  {Array}   urls      Array of urls of resources
+   * @param  {Array}   types     Array of types of resources
+   * @param  {Function} callback Callback to invoke for each resource
+   * @return {void}
+   * @see  loadResource
+   */
+  loadAssetGroup(urls, types, callback) {
     if(urls.length !== types.length)
     {
       throw 'Incompatible types: types.length = ' + types.length + '; urls.length = ' + urls.length;
@@ -121,14 +156,16 @@ var AssetLoader = function()
     {
       this.loadAsset(urls[i], types[i], onEach.bind(undefined, i));
     }
-  };
+  }
 
-  this.getAsset = function(name)
-  {
-    return _assets[name];
-  };
-};
+  /**
+   * Directly retrieve an asset from the cache
+   * @param  {String} name The cache key
+   * @return {mixed}       The cached asset, if it exists.
+   */
+  getAsset(name) {
+    return this._assets[name];
+  }
+}
 
-imv.AssetLoader = AssetLoader;
-imv.Utilities = imv.Utilities || {};
-imv.Utilities.loadResource = loadResource;
+export default AssetLoader;
